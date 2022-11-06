@@ -21,3 +21,17 @@ There are several different platforms:
 * **Conveyor belt platform** : The player is forced to move to the right or to the left.
 * **Spring platform** : The player will be bounced up when steps on it
 
+### Updates (TODO)
+
+Architecture of application
+Challenges so far
+Expect to meet goals?
+
+### Demonstration (TODO)
+
+
+### Timeline
+* 11/09 Proposal
+* 11/23 Update
+* 12/07 Demonstration
+
