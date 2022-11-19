@@ -37,6 +37,14 @@ Expect to meet goals?
 
 ## Setup The Game
 ```
+git clone https://github.com/brsmsg/CSE230-fall22-Group11.git`
+cd CSE230-fall22-Group11
+stack run
+```
+
+or you can use:
+
+```
   stack setup
   stack build
   stack exec ns-shaft
