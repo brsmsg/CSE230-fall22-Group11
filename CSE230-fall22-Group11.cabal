@@ -35,7 +35,7 @@ library
       base >=4.7 && <5
   default-language: Haskell2010
 
-executable CSE230-fall22-Group11-exe
+executable ns-shaft
   main-is: Main.hs
   other-modules:
       Paths_CSE230_fall22_Group11

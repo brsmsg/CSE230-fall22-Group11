@@ -37,7 +37,7 @@ library:
   source-dirs: src
 
 executables:
-  CSE230-fall22-Group11-exe:
+  ns-shaft:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
