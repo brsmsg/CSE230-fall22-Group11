@@ -26,6 +26,8 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Shaft
+      UI
   other-modules:
       Paths_CSE230_fall22_Group11
   hs-source-dirs:
@@ -33,6 +35,8 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
+    , brick
+    , vty
   default-language: Haskell2010
 
 executable ns-shaft
@@ -45,6 +49,8 @@ executable ns-shaft
   build-depends:
       CSE230-fall22-Group11
     , base >=4.7 && <5
+    , brick
+    , vty
   default-language: Haskell2010
 
 test-suite CSE230-fall22-Group11-test
@@ -58,4 +64,6 @@ test-suite CSE230-fall22-Group11-test
   build-depends:
       CSE230-fall22-Group11
     , base >=4.7 && <5
+    , brick
+    , vty
   default-language: Haskell2010
