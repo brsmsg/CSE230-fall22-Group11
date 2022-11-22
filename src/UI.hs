@@ -23,7 +23,7 @@ app :: App Game Tick Name
 app = App { appDraw = drawUI
           , appChooseCursor = neverShowCursor
           , appHandleEvent = handleEvent
-          , appStartEvent = return ()
+          , appStartEvent = return 
           , appAttrMap = const theMap
           }
 
@@ -38,9 +38,10 @@ main = do
   void $ customMain initVty vtyBuilder (Just chan) app g
 
 
-handleEvent :: BrickEvent Name Tick -> EventM Name Game ()
-handleEvent (VtyEvent (V.EvKey V.KEsc [])) = halt
-handleEvent _ = continueWithoutRedraw 
+handleEvent :: Game -> BrickEvent Name Tick -> EventM Name (Next Game)
+handleEvent g (VtyEvent (V.EvKey V.KEsc [])) = halt g
+handleEvent g _ = continueWithoutRedraw g
+
 
 drawUI :: Game -> [Widget Name]
 drawUI g = [center (str"Left") <+> vBorder <+> center(str "Right")]
