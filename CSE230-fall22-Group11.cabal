@@ -37,6 +37,12 @@ library
   build-depends:
       base >=4.7 && <5
     , brick
+    , containers
+    , extra
+    , lens
+    , linear
+    , random
+    , transformers
     , vty
   default-language: Haskell2010
 
@@ -51,6 +57,12 @@ executable ns-shaft
       CSE230-fall22-Group11
     , base >=4.7 && <5
     , brick
+    , containers
+    , extra
+    , lens
+    , linear
+    , random
+    , transformers
     , vty
   default-language: Haskell2010
 
@@ -66,5 +78,11 @@ test-suite CSE230-fall22-Group11-test
       CSE230-fall22-Group11
     , base >=4.7 && <5
     , brick
+    , containers
+    , extra
+    , lens
+    , linear
+    , random
+    , transformers
     , vty
   default-language: Haskell2010
