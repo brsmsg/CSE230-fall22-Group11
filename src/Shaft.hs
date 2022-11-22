@@ -6,10 +6,16 @@ module Shaft
   , Game(..)
   , height
   , width
-  , platform
   , health
   , score
   , dead
+  , platformWidth
+  , player
+  , normalPlatform
+  , healingPlatform
+  , spikePlatform
+  , conveyorPlatform
+  , temporaryPlatform
 ) where
 -- module Shaft where
 
@@ -27,23 +33,34 @@ height :: Int
 height = 20
 
 width :: Int
-width = 20
+width = 42
+
+platformWidth :: Int
+platformWidth = 8
 
 type Coord = V2 Int
+type Platform = [Coord]
 
 data Game = Game {
-  -- _player :: 
+  _player :: [Coord],
   _score :: Int,
   _health :: Int,
   _dead :: Bool,
   _pause :: Bool,
-  -- _platform :: [Coord]
-  _platform :: Coord
+  _normalPlatform :: Platform,
+  _healingPlatform :: Platform,
+  _spikePlatform :: Platform,
+  _conveyorPlatform :: Platform,
+  _temporaryPlatform :: Platform
 } deriving (Show)
 
 
 makeLenses ''Game
 
+-- step :: Game -> Game
+-- step s = flip execState s . runMaybeT $ do
+  -- MaybeT $ guard . not <$>
+  -- MaybeT . fmap Just $ 
 
 initGame :: IO Game
 initGame = do 
@@ -51,7 +68,11 @@ initGame = do
       _score = 0
     , _dead = False
     , _health = 10
-    , _platform = V2 10 10
-
+    , _normalPlatform = [(V2 x (height `div` 2)) | x <- [(width `div` 2 - platformWidth `div` 2)..(width `div` 2 + platformWidth `div` 2)]]
+    , _healingPlatform = [(V2 y 5) | y <- [7..(7+platformWidth)]]
+    , _spikePlatform = [(V2 y 15) | y <- [12..(12+platformWidth)]]
+    -- , _temporaryPlatform = ...
+    -- , _conveyorPlatform = ...
+    , _player = [(V2 (width `div` 2) (height `div` 2 + k)) | k <- [1,2]]
   }
   return g

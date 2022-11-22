@@ -36,7 +36,14 @@ app = App { appDraw = drawUI
           , appAttrMap = const theMap
           }
 
-data Cell = Player | NormalPlatform | Empty
+data Cell 
+  = Player 
+  | NormalPlatform 
+  | HealingPlatform
+  | SpikePlatform
+  | TemporaryPlatform
+  | ConveyorPlatform
+  | Empty
 
 main :: IO ()
 main = do
@@ -51,16 +58,18 @@ main = do
 
 handleEvent :: BrickEvent Name Tick -> EventM Name Game ()
 handleEvent (VtyEvent (V.EvKey V.KEsc [])) = halt
+handleEvent (VtyEvent (V.EvKey (V.KChar 'q') [])) = halt
 handleEvent _ = continueWithoutRedraw 
 
 drawUI :: Game -> [Widget Name]
 -- drawUI g = [center (str"Left") <+> vBorder <+> center(str "Right")]
-drawUI g = [ C.center $ padRight (Pad 2) (drawStats g) <+> drawGrid g ]
+drawUI g = [ C.center $ padTop (Pad 2) (drawStats g) <=> drawGrid g ]
 
 drawStats :: Game -> Widget Name
-drawStats g = hLimit 11
-  $ vBox [ drawScore (g ^. score)
-         , padTop (Pad 2) $ drawGameOver (g ^. dead)
+drawStats g = hLimit 44
+  $ hBox [ drawScore (g ^. score)
+        --  , padTop (Pad 2) $ drawGameOver (g ^. dead)
+         , drawHealth (g ^. health)
          ]
 
 drawGameOver :: Bool -> Widget Name
@@ -68,6 +77,7 @@ drawGameOver dead =
   if dead
      then withAttr gameOverAttr $ C.hCenter $ str "GAME OVER"
      else emptyWidget
+
 
 
 drawGrid :: Game -> Widget Name
@@ -79,20 +89,33 @@ drawGrid g = withBorderStyle BS.unicodeBold
     cellsInRow y = [drawCoord (V2 x y) | x <- [0..width - 1]]
     drawCoord    = drawCell . cellAt
     cellAt c
-      -- | c `elem` g ^. 
-      | c == g ^. platform = NormalPlatform
+      | c `elem` g ^. player = Player
+      | c `elem` g ^. normalPlatform = NormalPlatform
+      | c `elem` g ^. healingPlatform = HealingPlatform
+      | c `elem` g ^. spikePlatform = SpikePlatform
       | otherwise = Empty
 
 
 
 drawCell :: Cell -> Widget Name
 drawCell NormalPlatform = withAttr normalPlatformAttr cw
+drawCell HealingPlatform = withAttr healingPlatformAttr cw
+drawCell SpikePlatform  = withAttr spikePlatformAttr cw
+drawCell TemporaryPlatform  = withAttr temporaryPlatformAttr cw
+drawCell ConveyorPlatform  = withAttr conveyorPlatformAttr cw
 drawCell Empty          = withAttr emptyAttr cw
-
+drawCell Player         = withAttr playerAttr cw
 
 drawScore :: Int -> Widget Name
 drawScore n = withBorderStyle BS.unicodeBold
   $ B.borderWithLabel (str "Score")
+  $ C.hCenter
+  $ padAll 1
+  $ str $ show n
+
+drawHealth :: Int -> Widget Name
+drawHealth n = withBorderStyle BS.unicodeBold
+  $ B.borderWithLabel (str "Health")
   $ C.hCenter
   $ padAll 1
   $ str $ show n
@@ -102,7 +125,14 @@ cw = str " "
 
 
 theMap :: AttrMap
-theMap = attrMap V.defAttr [(normalPlatformAttr, V.red `on` V.red)]
+theMap = attrMap V.defAttr [
+  (playerAttr, V.red `on` V.red),
+  (normalPlatformAttr, V.white `on` V.white),
+  (spikePlatformAttr, V.blue `on` V.blue),
+  (healingPlatformAttr, V.green `on` V.green),
+  (temporaryPlatformAttr, V.yellow `on` V.yellow),
+  (conveyorPlatformAttr, V.magenta `on` V.magenta)
+  ]
 
 emptyAttr :: AttrName
 emptyAttr = attrName "emptyAttr"
@@ -112,3 +142,18 @@ normalPlatformAttr = attrName "normalPlatformAttr"
 
 gameOverAttr :: AttrName
 gameOverAttr = attrName "gameOver"
+
+playerAttr :: AttrName
+playerAttr = attrName "playerAttr"
+
+spikePlatformAttr :: AttrName
+spikePlatformAttr = attrName "spikePlatformAttr"
+
+healingPlatformAttr :: AttrName
+healingPlatformAttr = attrName "healingPlatformAttr"
+
+temporaryPlatformAttr :: AttrName
+temporaryPlatformAttr = attrName "temporaryPlatformAttr"
+
+conveyorPlatformAttr :: AttrName
+conveyorPlatformAttr = attrName "conveyorPlatformAttr"
