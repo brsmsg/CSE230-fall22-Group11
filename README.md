@@ -55,6 +55,7 @@ Shaft.hs is the model layer containing the basic type definitions of data struct
     * Randomly generated platforms.
     * The interaction of characters and different types of platforms, eg. spring platforms make the character spring up.
     * The acceleration of platforms over time.
+3. It takes time to figure out how to generalize the definition of platforms, i.e. different platforms can share the same code to reduce redundancy.
 
 
 #### Expect to meet goals?
