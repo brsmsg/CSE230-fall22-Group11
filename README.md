@@ -21,11 +21,45 @@ There are several different platforms:
 * **Conveyor belt platform** : The player is forced to move to the right or to the left.
 * **Spring platform** : The player will be bounced up when steps on it
 
-## Updates (TODO)
+## Updates
 
-Architecture of application
-Challenges so far
-Expect to meet goals?
+#### Architecture of application:
+We organized our project in model-view-controller(MVC) architecture, enlightened by the Sam Tay Snake Game tutorial: https://github.com/samtay/snake
+The directory tree of our project: 
+```
+.
+├── CHANGELOG.md
+├── CSE230-fall22-Group11.cabal
+├── LICENSE
+├── README.md
+├── Setup.hs
+├── app
+│   └── Main.hs
+├── package.yaml
+├── src
+│   ├── Controller.hs
+│   ├── Lib.hs
+│   ├── Shaft.hs
+│   └── UI.hs
+├── stack.yaml
+├── stack.yaml.lock
+└── test
+    └── Spec.hs
+
+```
+Shaft.hs is the model layer containing the basic type definitions of data structures in our project, like the basic definition of States and Events in Brick and different types of platforms. UI.hs is the view layer that implements the user interface using Brick. Controller.hs declared basic control logic functions to concatenate models and views. Lib.hs includes some common tool functions.
+
+#### Challenges so far
+1. Merge different parts from all team members and ensure the project works well.
+2. It takes time to learn to design and implement some complex features 
+    * Randomly generated platforms.
+    * The interaction of characters and different types of platforms, eg. spring platforms make the character spring up.
+    * The acceleration of platforms over time.
+
+
+#### Expect to meet goals?
+We expect to meet our goal before the deadline
+
 
 ## Demonstration (TODO)
 
