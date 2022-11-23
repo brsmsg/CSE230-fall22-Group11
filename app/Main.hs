@@ -1,7 +1,7 @@
 module Main (main) where
 
 -- import Lib
-import UI(main)
+-- import UI(main)
 
--- main :: IO ()
--- main = someFunc
+main :: IO ()
+main = putStr "Hello world"

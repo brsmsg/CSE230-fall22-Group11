@@ -35,14 +35,14 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
     , brick
     , containers
-    , extra
     , lens
     , linear
+    , microlens
     , random
-    , transformers
     , vty
   default-language: Haskell2010
 
@@ -55,14 +55,14 @@ executable ns-shaft
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       CSE230-fall22-Group11
+    , QuickCheck
     , base >=4.7 && <5
     , brick
     , containers
-    , extra
     , lens
     , linear
+    , microlens
     , random
-    , transformers
     , vty
   default-language: Haskell2010
 
@@ -76,13 +76,13 @@ test-suite CSE230-fall22-Group11-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       CSE230-fall22-Group11
+    , QuickCheck
     , base >=4.7 && <5
     , brick
     , containers
-    , extra
     , lens
     , linear
+    , microlens
     , random
-    , transformers
     , vty
   default-language: Haskell2010

@@ -23,12 +23,12 @@ dependencies:
 - base >= 4.7 && < 5
 - brick
 - vty
-- containers
-- extra
-- linear
-- lens
 - random
-- transformers
+- linear
+- containers
+- microlens
+- lens
+- QuickCheck
 
 ghc-options:
 - -Wall
