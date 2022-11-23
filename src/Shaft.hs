@@ -26,6 +26,7 @@ type Platform = [Coord]
 type Player = [Coord]
 data PlatformType = NormalPlatform | SpikePlatform deriving (Eq, Show)
 data Tick = Tick
+data Movement = Left | Right
 
 data Game = Game {
   _player     :: Player,
@@ -59,29 +60,6 @@ initState bestScore = do
   }
 
 
-step  :: Game -> Game
-step g = fromMaybe g $ do
-  guard $ g^.alive
-  return $ fromMaybe (step' g) (checkAlive g)
-  -- return $ fromMaybe (step' g) (Just g)
-
-step' :: Game -> Game
--- step' = createPlatforms . move
-step' = move
-
-move :: Game -> Game
--- move = movePlatforms . movePlayer
-move = movePlatforms
-
-movePlatforms :: Game -> Game
-movePlatforms g = g & platforms %~ fmap movePlatform
-
-movePlatform  :: (Platform, PlatformType) -> (Platform, PlatformType)
-movePlatform  (plt, NormalPlatform) = (fmap (+ V2 0 1) plt, NormalPlatform)
--- movePlatform  other = other
-
-
-
 inNormalPlatform :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
 inNormalPlatform c bs = getAny $ foldMap (Any . inNormalPlatform' c) bs
 
@@ -96,18 +74,56 @@ inSpikePlatform' :: Coord -> (Platform, PlatformType) -> Bool
 inSpikePlatform' c (b, SpikePlatform) = c `elem` b
 inSpikePlatform' _ _ = False
 
+step  :: Game -> Game
+step g = fromMaybe g $ do
+  guard $ g^.alive
+  return $ fromMaybe (step' g) (checkAlive g)
+  -- return $ fromMaybe (step' g) (Just g)
 
+step' :: Game -> Game
+step' = createPlatforms . move . deletePlatformsLeft . deletePlatformsRight
+-- Todo
+-- step' = move
 
+move :: Game -> Game
+-- Todo
+-- move = movePlatforms . movePlayer
+move = movePlatforms
 
-createPlatforms :: Game -> Game
-createPlatforms g = g & platforms %~ (|> (createPlatform NormalPlatform 5))
+afterMoveSignleStep :: Game -> Game
+afterMoveSignleStep g = fromMaybe g $ do 
+                        guard (not $ isDead g) 
+                        return g
 
-createPlatform :: PlatformType -> Int -> (Platform, PlatformType)
-createPlatform pltType pos = (getPlatform pltType pos, pltType)
+movePlayerSingleStep :: Movement -> Game -> Game
+movePlayerSingleStep Left g  = if shouldLeft g && g^.alive then afterMoveSignleStep (movePlayerHorizontally Left g) else g
+movePlayerSingleStep Right g = if shouldRight g && g^.alive then afterMoveSignleStep (movePlayerHorizontally Right g)  else g
 
-getPlatform :: PlatformType -> Int -> Platform
--- getPlatform NormalPlatform  x = [V2 0 y, V2 1 y, V2 2 y]
-getPlatform NormalPlatform  y = [V2 0 y, V2 1 y, V2 2 y, V2 3 y, V2 4 y, V2 5 y]
+movePlayerHorizontally :: Movement -> Game -> Game
+movePlayerHorizontally dir g =
+  case dir of
+    Left  -> if shouldLeft g then g & player %~ fmap (+ V2 (-1) 0) else g
+    Right -> if shouldRight g then g & player %~ fmap (+ V2 1 0) else g
+
+shouldLeft :: Game -> Bool
+shouldLeft g = shouldLeft' [coord^._1 | coord <- g^.player]
+
+shouldLeft' :: [Int] -> Bool
+shouldLeft' xs = (xs /= []) && minimum xs > 0
+
+shouldRight :: Game -> Bool
+shouldRight g = shouldRight' [coord^._1 | coord <- g^.player]
+
+shouldRight' :: [Int] -> Bool
+shouldRight' xs = (xs /= []) && minimum xs < gridWidth - 1
+
+movePlatforms :: Game -> Game
+movePlatforms g = g & platforms %~ fmap movePlatform
+
+movePlatform  :: (Platform, PlatformType) -> (Platform, PlatformType)
+movePlatform  (plt, NormalPlatform) = (fmap (+ V2 0 1) plt, NormalPlatform)
+movePlatform  (plt, SpikePlatform) = (fmap (+ V2 0 1) plt, SpikePlatform)
+-- movePlatform  other = other
 
 
 
@@ -128,3 +144,42 @@ crash player platforms = getAny $ foldMap (Any . crash' player) platforms
 
 crash' :: Coord -> (Platform, PlatformType) -> Bool
 crash' player platform = player `elem` fst platform
+
+addRandomPlatform :: PlatformType -> Game -> Game
+addRandomPlatform NormalPlatform g = g & platforms %~ (|> (createPlatform NormalPlatform 5))
+addRandomPlatform SpikePlatform  g = g & platforms %~ (|> (createPlatform SpikePlatform 5))
+
+
+createPlatforms :: Game -> Game
+-- createPlatforms g = g & platforms %~ (|> (createPlatform NormalPlatform 5))
+createPlatforms g = addRandomPlatform NormalPlatform $ addRandomPlatform SpikePlatform g
+
+createPlatform :: PlatformType -> Int -> (Platform, PlatformType)
+createPlatform pltType pos = (getPlatformCoord pltType pos, pltType)
+
+-- getPlatform :: PlatformType -> Int -> Platform
+-- getPlatform NormalPlatform  x = [V2 0 y, V2 1 y, V2 2 y]
+-- getPlatform NormalPlatform  y = [V2 0 y, V2 1 y, V2 2 y, V2 3 y, V2 4 y, V2 5 y]
+
+getPlatformCoord :: PlatformType -> Int -> Platform
+getPlatformCoord NormalPlatform x = [V2 x 0, V2 x (-1), V2 x (-2), V2 (x - 1) (-1), V2 (x + 1) (-1)]
+getPlatformCoord SpikePlatform  x = [V2 x 0, V2 x (-1), V2 x (-2), V2 (x - 1) (-1), V2 (x + 1) (-1)]
+
+deletePlatformsLeft :: Game -> Game
+deletePlatformsLeft g = case viewl $ g^.platforms of
+                      EmptyL  -> g
+                      a :< as -> if isOutOfBoundary a
+                                  then deletePlatformsLeft (g & platforms .~ as)
+                                  else g
+
+deletePlatformsRight :: Game -> Game
+deletePlatformsRight g = case viewr $ g^.platforms of
+                      EmptyR  -> g
+                      as :> a -> if isOutOfBoundary a
+                                  then deletePlatformsRight (g & platforms .~ as)
+                                  else g
+
+-- | check the obastacle is out of boundray
+isOutOfBoundary :: (Platform, PlatformType) -> Bool
+isOutOfBoundary (coords, NormalPlatform) = (coords !! 2)^._2 > gridHeight
+isOutOfBoundary (coords, SpikePlatform)  = last coords^._2 > gridHeight
