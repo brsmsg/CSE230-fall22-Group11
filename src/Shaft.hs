@@ -32,7 +32,8 @@ data Game = Game {
   _platforms   :: SEQ.Seq (Platform, PlatformType),  
   _score      :: Score,
   _bestScore  :: Score,
-  _health     :: Health
+  _health     :: Health,
+  _alive      :: Bool
 } deriving (Show)
 
 makeLenses ''Game
@@ -53,18 +54,20 @@ initState bestScore = do
     -- _platforms   = SEQ.empty,
     _platforms   =  singleton ([V2 0 5, V2 1 5, V2 2 5, V2 3 5, V2 4 5, V2 5 5], NormalPlatform),
     _bestScore  = bestScore,
-    _health     = 10
+    _health     = 10,
+    _alive      = True
   }
 
 
 step  :: Game -> Game
 step g = fromMaybe g $ do
-  -- guard $ g^.alive
-  -- return $ fromMaybe (step' g) (checkAlive g)
-  return $ fromMaybe (step' g) (Just g)
+  guard $ g^.alive
+  return $ fromMaybe (step' g) (checkAlive g)
+  -- return $ fromMaybe (step' g) (Just g)
 
 step' :: Game -> Game
-step' = createPlatforms . move
+-- step' = createPlatforms . move
+step' = move
 
 move :: Game -> Game
 -- move = movePlatforms . movePlayer
@@ -75,7 +78,7 @@ movePlatforms g = g & platforms %~ fmap movePlatform
 
 movePlatform  :: (Platform, PlatformType) -> (Platform, PlatformType)
 movePlatform  (plt, NormalPlatform) = (fmap (+ V2 0 1) plt, NormalPlatform)
-movePlatform  other = other
+-- movePlatform  other = other
 
 
 
@@ -105,3 +108,23 @@ createPlatform pltType pos = (getPlatform pltType pos, pltType)
 getPlatform :: PlatformType -> Int -> Platform
 -- getPlatform NormalPlatform  x = [V2 0 y, V2 1 y, V2 2 y]
 getPlatform NormalPlatform  y = [V2 0 y, V2 1 y, V2 2 y, V2 3 y, V2 4 y, V2 5 y]
+
+
+
+checkAlive :: Game -> Maybe Game
+checkAlive g = do
+  guard $ isDead g
+  return $ g & alive .~ False
+
+
+isDead :: Game -> Bool
+isDead g = let player' = g^.player
+               platforms' = g^.platforms
+               in getAny $ foldMap (Any . flip crash platforms') player'
+
+
+crash :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
+crash player platforms = getAny $ foldMap (Any . crash' player) platforms
+
+crash' :: Coord -> (Platform, PlatformType) -> Bool
+crash' player platform = player `elem` fst platform
