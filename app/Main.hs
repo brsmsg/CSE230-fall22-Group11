@@ -2,6 +2,10 @@ module Main (main) where
 
 -- import Lib
 -- import UI(main)
+import Shaft
+import UI(gameInit)
 
 main :: IO ()
-main = putStr "Hello world"
+main = do
+    g <- gameInit
+    return ()
