@@ -11,7 +11,7 @@ import Control.Lens (makeLenses, (^.), (.~), (%~), (&), _1, _2)
 import Data.Maybe (fromMaybe)
 import Control.Monad (guard)
 import Prelude hiding (Right, Left)
-import Data.Sequence (ViewR(EmptyR, (:>)), viewr, (|>), ViewL (EmptyL, (:<)), viewl)
+import Data.Sequence (ViewR(EmptyR, (:>)), viewr, (|>), ViewL (EmptyL, (:<)), viewl, singleton)
 import Graphics.Vty.PictureToSpans (isOutOfBounds)
 import Data.List (findIndex)
 import GHC.IO.Handle.Types (Handle__(haDecoder))
@@ -22,13 +22,14 @@ type Score = Int
 type Health = Int
 type Platform = [Coord]
 
-data Player = [Coord]
-data PlatformType = NormalPlatform | SpikePlatform
+
+type Player = [Coord]
+data PlatformType = NormalPlatform | SpikePlatform deriving (Eq, Show)
 data Tick = Tick
 
 data Game = Game {
   _player     :: Player,
-  _platform   :: SEQ.seq (Platform, PlatformType),  
+  _platforms   :: SEQ.Seq (Platform, PlatformType),  
   _score      :: Score,
   _bestScore  :: Score,
   _health     :: Health
@@ -49,7 +50,8 @@ initState bestScore = do
   return Game {
     _player     = initPlayer,
     _score      = 0,
-    _platform   = SEQ.empty,
+    -- _platforms   = SEQ.empty,
+    _platforms   =  singleton ([V2 0 5, V2 1 5, V2 2 5, V2 3 5, V2 4 5, V2 5 5], NormalPlatform),
     _bestScore  = bestScore,
     _health     = 10
   }
@@ -62,29 +64,44 @@ step g = fromMaybe g $ do
   return $ fromMaybe (step' g) (Just g)
 
 step' :: Game -> Game
-step' = move
+step' = createPlatforms . move
 
 move :: Game -> Game
 -- move = movePlatforms . movePlayer
 move = movePlatforms
 
 movePlatforms :: Game -> Game
-movePlatforms g = g & platform %~ fmap movePlatform
+movePlatforms g = g & platforms %~ fmap movePlatform
 
-movePlatform  :: (Platform PlatformType) -> (Platform PlatformType)
+movePlatform  :: (Platform, PlatformType) -> (Platform, PlatformType)
 movePlatform  (plt, NormalPlatform) = (fmap (+ V2 0 1) plt, NormalPlatform)
-movePlatform  _ = _
+movePlatform  other = other
 
-inNormalPlatform :: Coordinate -> SEQ.Seq (Platform, PlatformType) -> Bool
+
+
+inNormalPlatform :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
 inNormalPlatform c bs = getAny $ foldMap (Any . inNormalPlatform' c) bs
 
-inNormalPlatform' :: Coordinate -> (Platform, PlatformType) -> Bool
+inNormalPlatform' :: Coord -> (Platform, PlatformType) -> Bool
 inNormalPlatform' c (b, NormalPlatform) = c `elem` b
 inNormalPlatform' _ _ = False
 
-inSpikePlatform :: Coordinate -> SEQ.Seq (Platform, PlatformType) -> Bool
+inSpikePlatform :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
 inSpikePlatform c bs = getAny $ foldMap (Any . inSpikePlatform' c) bs
 
-inSpikePlatform' :: Coordinate -> (Platform, PlatformType) -> Bool
+inSpikePlatform' :: Coord -> (Platform, PlatformType) -> Bool
 inSpikePlatform' c (b, SpikePlatform) = c `elem` b
 inSpikePlatform' _ _ = False
+
+
+
+
+createPlatforms :: Game -> Game
+createPlatforms g = g & platforms %~ (|> (createPlatform NormalPlatform 5))
+
+createPlatform :: PlatformType -> Int -> (Platform, PlatformType)
+createPlatform pltType pos = (getPlatform pltType pos, pltType)
+
+getPlatform :: PlatformType -> Int -> Platform
+-- getPlatform NormalPlatform  x = [V2 0 y, V2 1 y, V2 2 y]
+getPlatform NormalPlatform  y = [V2 0 y, V2 1 y, V2 2 y, V2 3 y, V2 4 y, V2 5 y]

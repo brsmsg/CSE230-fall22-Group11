@@ -59,14 +59,14 @@ drawScore s = withBorderStyle BS.unicodeRounded
   $ B.borderWithLabel (str " Current Score")
   $ C.hCenter
   $ padAll 1
-  $ str (show n)
+  $ str (show s)
 
 drawBestScore :: Score -> Widget Name
-drawBestScore n = withBorderStyle BS.unicodeRounded
+drawBestScore s = withBorderStyle BS.unicodeRounded
   $ B.borderWithLabel (str " Best Score ")
   $ C.hCenter
   $ padAll 1
-  $ str (show n)
+  $ str (show s)
 
 drawGameOver :: Bool -> Widget Name
 drawGameOver False = withAttr gameOverAttr $ C.hCenter $ str "Game Over"
@@ -100,13 +100,13 @@ drawGrid g = withBorderStyle BS.unicodeRounded
       | otherwise                           = Empty
 
 
-drawCell :: Widget Name
+drawCell :: Cell -> Widget Name
 drawCell Player = withAttr playerAttr space
 drawCell Empty  = withAttr emptyAttr space
 drawCell NormalPlatform = withAttr normalPlatformAttr space
 drawCell SpikePlatform  = withAttr spikePlatformAttr upArrow
 
-palyerAttr :: AttrName
+playerAttr :: AttrName
 playerAttr = attrName "playerAttr"
 
 normalPlatformAttr :: AttrName
@@ -120,11 +120,6 @@ emptyAttr = attrName "emptyAttr"
 
 gameOverAttr :: AttrName
 gameOverAttr = attrName "gameOver"
-
-
-drawCell :: Cell -> Widget Name
-drawCell Player = withAttr playerAttr space
-
 
 space :: Widget Name
 space = str " "
@@ -141,7 +136,7 @@ rightArrow = str ">"
 theMap :: AttrMap
 theMap = attrMap V.defAttr
   [ (playerAttr, V.white `on` V.white)
-  , (normalPlatformAttr, fg V.blue `V.withStyle` V.bold)
+  , (normalPlatformAttr, V.blue `on` V.blue)
   , (spikePlatformAttr, fg V.yellow `V.withStyle` V.bold)
   , (gameOverAttr, fg V.red `V.withStyle` V.bold)
   ]
