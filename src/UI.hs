@@ -103,7 +103,7 @@ drawGrid g = withBorderStyle BS.unicodeRounded
 drawCell :: Cell -> Widget Name
 drawCell Player = withAttr playerAttr space
 drawCell Empty  = withAttr emptyAttr space
-drawCell NormalPlatform = withAttr normalPlatformAttr space
+drawCell NormalPlatform = withAttr normalPlatformAttr underscore
 drawCell SpikePlatform  = withAttr spikePlatformAttr upArrow
 
 playerAttr :: AttrName
@@ -124,6 +124,9 @@ gameOverAttr = attrName "gameOver"
 space :: Widget Name
 space = str " "
 
+underscore :: Widget Name
+underscore = str "_"
+
 upArrow :: Widget Name
 upArrow = str "^"
 
@@ -136,7 +139,7 @@ rightArrow = str ">"
 theMap :: AttrMap
 theMap = attrMap V.defAttr
   [ (playerAttr, V.white `on` V.white)
-  , (normalPlatformAttr, V.blue `on` V.blue)
+  , (normalPlatformAttr, fg V.white `V.withStyle` V.bold)
   , (spikePlatformAttr, fg V.yellow `V.withStyle` V.bold)
   , (gameOverAttr, fg V.red `V.withStyle` V.bold)
   ]
