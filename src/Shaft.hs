@@ -194,8 +194,8 @@ checkAlive g = do
 isDead :: Game -> Bool
 isDead g = let player' = g^.player
                platforms' = g^.platforms
-               in getAny $ foldMap (Any . flip crash platforms') player'
-
+              in ((last player')^._2) < 0
+              --  in getAny $ foldMap (Any . flip crash platforms') player'
 
 crash :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
 crash player platforms = getAny $ foldMap (Any . crash' player) platforms
@@ -204,8 +204,6 @@ crash' :: Coord -> (Platform, PlatformType) -> Bool
 crash' player platform = player `elem` fst platform
 
 addRandomPlatform :: PlatformType -> Game -> Game
--- addRandomPlatform NormalPlatform g = g & platforms %~ (|> (createPlatform NormalPlatform 5))
--- addRandomPlatform SpikePlatform  g = g & platforms %~ (|> (createPlatform SpikePlatform 5))
 addRandomPlatform NormalPlatform g = let (Modes (x:xs) (y:ys) (j:js) ms) = getModes g
                                          newModes = Modes xs ys js ms
                                          newObs = createPlatform NormalPlatform x
