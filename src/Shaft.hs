@@ -179,7 +179,20 @@ movePlatform  (plt, SpikePlatform) = (fmap (+ V2 0 1) plt, SpikePlatform)
 -- movePlatform  other = other
 
 movePlayer :: Game -> Game
-movePlayer g = incDepth (g & player %~ fmap (+ V2 0 (-1)))
+movePlayer g = let player' = g^.player
+                   platforms' = g^.platforms
+  in 
+    if getAny $ foldMap (Any . flip crash platforms') player' 
+      then g & player %~ fmap (+ V2 0 (1))
+      else incDepth (g & player %~ fmap (+ V2 0 (-1)))
+
+
+crash :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
+crash player platforms = getAny $ foldMap (Any . crash' player) platforms
+
+crash' :: Coord -> (Platform, PlatformType) -> Bool
+crash' player platform = player `elem` fst platform
+
 
 -- increase depth
 incDepth :: Game -> Game
@@ -195,13 +208,7 @@ isDead :: Game -> Bool
 isDead g = let player' = g^.player
                platforms' = g^.platforms
               in ((last player')^._2) < 0
-              --  in getAny $ foldMap (Any . flip crash platforms') player'
 
-crash :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
-crash player platforms = getAny $ foldMap (Any . crash' player) platforms
-
-crash' :: Coord -> (Platform, PlatformType) -> Bool
-crash' player platform = player `elem` fst platform
 
 addRandomPlatform :: PlatformType -> Game -> Game
 addRandomPlatform NormalPlatform g = let (Modes (x:xs) (y:ys) (j:js) ms) = getModes g
