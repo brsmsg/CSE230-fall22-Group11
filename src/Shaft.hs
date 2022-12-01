@@ -28,6 +28,26 @@ data PlatformType = NormalPlatform | SpikePlatform deriving (Eq, Show)
 data Tick = Tick
 data Movement = Left | Right
 
+data Mode = Easy | Medium | Hard deriving (Eq, Show)
+data ModeMap = ModeMap
+  {
+    _easy   :: Modes,
+    _medium :: Modes,
+    _hard   :: Modes
+  }
+  deriving (Eq, Show)
+type Frequency = [Int]
+data Modes = Modes
+  {
+    _x                   :: [Int],
+    _y                   :: [Int],
+    _normalFrequency  :: Frequency,
+    _spikeFrequency       :: Frequency
+    -- _leftSharkFrequency  :: Frequency,
+    -- _rightSharkFrequency :: Frequency
+  }
+  deriving (Eq, Show)
+
 data Game = Game {
   _player     :: Player,
   _platforms   :: SEQ.Seq (Platform, PlatformType),  
@@ -38,6 +58,8 @@ data Game = Game {
 } deriving (Show)
 
 makeLenses ''Game
+makeLenses ''ModeMap
+makeLenses ''Modes
 
 gridWidth :: Int
 gridWidth = 50
@@ -58,6 +80,20 @@ initState bestScore = do
     _health     = 10,
     _alive      = True
   }
+
+modeMaps :: IO ModeMap
+modeMaps = do
+  x    <- randomRs (0, gridWidth) <$> newStdGen
+  y    <- randomRs (0, last initPlayer^._2) <$> newStdGen
+  easyNormal <- randomRs (0, 10) <$> newStdGen
+  easySpike <- randomRs (5, 10) <$> newStdGen
+  -- easyJellyFish <- randomRs (5, 10) <$> newStdGen
+  medium <- randomRs (3, 5) <$> newStdGen
+  hard <- randomRs (0, 3) <$> newStdGen
+  return $ ModeMap
+    (Modes x y easyNormal easySpike)
+    (Modes x y medium medium)
+    (Modes x y hard hard)
 
 
 inNormalPlatform :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
@@ -87,8 +123,8 @@ step' = createPlatforms . move . deletePlatformsLeft . deletePlatformsRight
 
 move :: Game -> Game
 -- Todo
--- move = movePlatforms . movePlayer
-move = movePlatforms
+move = movePlatforms . movePlayer
+-- move = movePlatforms
 
 afterMoveSignleStep :: Game -> Game
 afterMoveSignleStep g = fromMaybe g $ do 
@@ -125,7 +161,12 @@ movePlatform  (plt, NormalPlatform) = (fmap (+ V2 0 1) plt, NormalPlatform)
 movePlatform  (plt, SpikePlatform) = (fmap (+ V2 0 1) plt, SpikePlatform)
 -- movePlatform  other = other
 
+movePlayer :: Game -> Game
+movePlayer g = incDepth (g & player %~ fmap (+ V2 0 (-1)))
 
+-- increase depth
+incDepth :: Game -> Game
+incDepth g = g & score %~ (+1)
 
 checkAlive :: Game -> Maybe Game
 checkAlive g = do
@@ -148,6 +189,14 @@ crash' player platform = player `elem` fst platform
 addRandomPlatform :: PlatformType -> Game -> Game
 addRandomPlatform NormalPlatform g = g & platforms %~ (|> (createPlatform NormalPlatform 5))
 addRandomPlatform SpikePlatform  g = g & platforms %~ (|> (createPlatform SpikePlatform 5))
+-- addRandomPlatform NormalPlatform g = let (Modes (x:xs) (y:ys) (j:js) ms) = getModes g
+--                                       newModes = Modes xs ys js ms 
+--                                       newObs = createObstacle Jellyfish x
+--                                     in
+--                                       if g^.score - (-5) >= j
+--                                       then setModes newModes g & obstacles %~ (|> flastnewObs) & ((lastObstaleDepth.jellyfish) .~ g^.depth)
+--                                       else g
+
 
 
 createPlatforms :: Game -> Game
