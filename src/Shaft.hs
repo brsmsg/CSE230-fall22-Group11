@@ -21,7 +21,7 @@ type Coord = V2 Int
 type Score = Int
 type Health = Int
 type Platform = [Coord]
-
+type Depth = Int
 
 type Player = [Coord]
 data PlatformType = NormalPlatform | SpikePlatform deriving (Eq, Show)
@@ -47,6 +47,14 @@ data Modes = Modes
     -- _rightSharkFrequency :: Frequency
   }
   deriving (Eq, Show)
+data LastDepth = LastDepth
+  {
+    _normal  :: Depth,
+    _spike       :: Depth
+    -- _leftShark  :: Depth,
+    -- _rightShark :: Depth
+  }
+  deriving (Eq, Show)
 
 data Game = Game {
   _player     :: Player,
@@ -56,12 +64,15 @@ data Game = Game {
   _health     :: Health,
   _alive      :: Bool,
   _modeMap    :: ModeMap,
-  _mode       :: Mode
+  _mode       :: Mode,
+  _lastPlatformDepth  :: LastDepth,
+  _time       :: Int
 } deriving (Show)
 
 makeLenses ''Game
 makeLenses ''ModeMap
 makeLenses ''Modes
+makeLenses ''LastDepth
 
 gridWidth :: Int
 gridWidth = 50
@@ -70,6 +81,9 @@ gridHeight = 20
 
 initPlayer :: Player
 initPlayer= [V2 (gridWidth `div` 2) (gridHeight - 3), V2 (gridWidth `div` 2) (gridHeight - 4)]
+
+initlastDepth :: LastDepth
+initlastDepth = LastDepth (-5) (-5)
 
 initState :: Score -> IO Game
 initState bestScore = do
@@ -83,14 +97,16 @@ initState bestScore = do
     _health     = 10,
     _alive      = True,
     _modeMap          = mode,
-    _mode             = Easy
+    _mode             = Easy,
+    _lastPlatformDepth      = initlastDepth,
+    _time   = 0
   }
 
 modeMaps :: IO ModeMap
 modeMaps = do
   x    <- randomRs (0, gridWidth) <$> newStdGen
   y    <- randomRs (0, last initPlayer^._2) <$> newStdGen
-  easyNormal <- randomRs (0, 10) <$> newStdGen
+  easyNormal <- randomRs (0, 5) <$> newStdGen
   easySpike <- randomRs (5, 10) <$> newStdGen
   -- easyJellyFish <- randomRs (5, 10) <$> newStdGen
   medium <- randomRs (3, 5) <$> newStdGen
@@ -134,7 +150,7 @@ step g = fromMaybe g $ do
   -- return $ fromMaybe (step' g) (Just g)
 
 step' :: Game -> Game
-step' = createPlatforms . move . deletePlatformsLeft . deletePlatformsRight
+step' = incTime . createPlatforms . move . deletePlatformsLeft . deletePlatformsRight
 -- Todo
 -- step' = move
 
@@ -142,6 +158,9 @@ move :: Game -> Game
 -- Todo
 move = movePlatforms . movePlayer
 -- move = movePlatforms
+
+incTime :: Game -> Game
+incTime g = g & time %~ (+1)
 
 afterMoveSignleStep :: Game -> Game
 afterMoveSignleStep g = fromMaybe g $ do 
@@ -193,7 +212,6 @@ crash player platforms = getAny $ foldMap (Any . crash' player) platforms
 crash' :: Coord -> (Platform, PlatformType) -> Bool
 crash' player platform = player `elem` fst platform
 
-
 -- increase depth
 incDepth :: Game -> Game
 incDepth g = g & score %~ (+1)
@@ -215,9 +233,8 @@ addRandomPlatform NormalPlatform g = let (Modes (x:xs) (y:ys) (j:js) ms) = getMo
                                          newModes = Modes xs ys js ms
                                          newObs = createPlatform NormalPlatform x
                                     in
-                                      if g^.score - (-5) >= j
-                                      -- then setModes newModes g & platforms %~ (|> newObs) & ((-5) .~ g^.score)
-                                      then setModes newModes g & platforms %~ (|> newObs) 
+                                      if g^.time - g^.lastPlatformDepth.normal >= j
+                                      then setModes newModes g & platforms %~ (|> newObs) & ((lastPlatformDepth.normal) .~ g^.time)
                                       else g
 addRandomPlatform _ g = g
 
