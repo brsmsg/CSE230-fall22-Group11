@@ -50,11 +50,13 @@ data Modes = Modes
 
 data Game = Game {
   _player     :: Player,
-  _platforms   :: SEQ.Seq (Platform, PlatformType),  
+  _platforms  :: SEQ.Seq (Platform, PlatformType),  
   _score      :: Score,
   _bestScore  :: Score,
   _health     :: Health,
-  _alive      :: Bool
+  _alive      :: Bool,
+  _modeMap    :: ModeMap,
+  _mode       :: Mode
 } deriving (Show)
 
 makeLenses ''Game
@@ -71,14 +73,17 @@ initPlayer= [V2 (gridWidth `div` 2) (gridHeight - 3), V2 (gridWidth `div` 2) (gr
 
 initState :: Score -> IO Game
 initState bestScore = do
+  mode <- modeMaps
   return Game {
     _player     = initPlayer,
     _score      = 0,
-    -- _platforms   = SEQ.empty,
-    _platforms   =  singleton ([V2 0 5, V2 1 5, V2 2 5, V2 3 5, V2 4 5, V2 5 5], NormalPlatform),
+    _platforms   = SEQ.empty,
+    -- _platforms   =  singleton ([V2 0 5, V2 1 5, V2 2 5, V2 3 5, V2 4 5, V2 5 5], NormalPlatform),
     _bestScore  = bestScore,
     _health     = 10,
-    _alive      = True
+    _alive      = True,
+    _modeMap          = mode,
+    _mode             = Easy
   }
 
 modeMaps :: IO ModeMap
@@ -95,6 +100,18 @@ modeMaps = do
     (Modes x y medium medium)
     (Modes x y hard hard)
 
+-- | Get game's relevant mode.
+getModes :: Game -> Modes
+getModes g = case g^.mode of
+                Easy -> g^.modeMap.easy
+                Medium -> g^.modeMap.medium
+                Hard -> g^.modeMap.hard
+
+setModes :: Modes -> Game -> Game
+setModes m g = case g^.mode of
+                  Easy -> g & modeMap.easy .~ m
+                  Medium -> g & modeMap.medium .~ m
+                  Hard -> g & modeMap.hard .~ m
 
 inNormalPlatform :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
 inNormalPlatform c bs = getAny $ foldMap (Any . inNormalPlatform' c) bs
@@ -187,16 +204,17 @@ crash' :: Coord -> (Platform, PlatformType) -> Bool
 crash' player platform = player `elem` fst platform
 
 addRandomPlatform :: PlatformType -> Game -> Game
-addRandomPlatform NormalPlatform g = g & platforms %~ (|> (createPlatform NormalPlatform 5))
-addRandomPlatform SpikePlatform  g = g & platforms %~ (|> (createPlatform SpikePlatform 5))
--- addRandomPlatform NormalPlatform g = let (Modes (x:xs) (y:ys) (j:js) ms) = getModes g
---                                       newModes = Modes xs ys js ms 
---                                       newObs = createObstacle Jellyfish x
---                                     in
---                                       if g^.score - (-5) >= j
---                                       then setModes newModes g & obstacles %~ (|> flastnewObs) & ((lastObstaleDepth.jellyfish) .~ g^.depth)
---                                       else g
-
+-- addRandomPlatform NormalPlatform g = g & platforms %~ (|> (createPlatform NormalPlatform 5))
+-- addRandomPlatform SpikePlatform  g = g & platforms %~ (|> (createPlatform SpikePlatform 5))
+addRandomPlatform NormalPlatform g = let (Modes (x:xs) (y:ys) (j:js) ms) = getModes g
+                                         newModes = Modes xs ys js ms
+                                         newObs = createPlatform NormalPlatform x
+                                    in
+                                      if g^.score - (-5) >= j
+                                      -- then setModes newModes g & platforms %~ (|> newObs) & ((-5) .~ g^.score)
+                                      then setModes newModes g & platforms %~ (|> newObs) 
+                                      else g
+addRandomPlatform _ g = g
 
 
 createPlatforms :: Game -> Game
@@ -211,8 +229,8 @@ createPlatform pltType pos = (getPlatformCoord pltType pos, pltType)
 -- getPlatform NormalPlatform  y = [V2 0 y, V2 1 y, V2 2 y, V2 3 y, V2 4 y, V2 5 y]
 
 getPlatformCoord :: PlatformType -> Int -> Platform
-getPlatformCoord NormalPlatform x = [V2 x 0, V2 x (-1), V2 x (-2), V2 (x - 1) (-1), V2 (x + 1) (-1)]
-getPlatformCoord SpikePlatform  x = [V2 x 0, V2 x (-1), V2 x (-2), V2 (x - 1) (-1), V2 (x + 1) (-1)]
+getPlatformCoord NormalPlatform x = [V2 x 0, V2 (x+1) 0, V2 (x+2) 0, V2 (x+3) 0, V2 (x+4) 0]
+getPlatformCoord SpikePlatform x = [V2 x 0, V2 (x+1) 0, V2 (x+2) 0, V2 (x+3) 0, V2 (x+4) 0]
 
 deletePlatformsLeft :: Game -> Game
 deletePlatformsLeft g = case viewl $ g^.platforms of
