@@ -172,7 +172,7 @@ step' = incTime . createPlatforms . move . deletePlatformsLeft . deletePlatforms
 
 move :: Game -> Game
 -- Todo
-move = movePlatforms . movePlayer . onSpike
+move = movePlatforms . movePlayer . onSpike . onLeft. onRight
 -- move = movePlatforms
 
 incTime :: Game -> Game
@@ -241,6 +241,36 @@ isOnSpike player platforms = getAny $ foldMap (Any . isOnSpike' player) platform
 
 isOnSpike' :: Coord -> (Platform, PlatformType) -> Bool
 isOnSpike' player platform = player `elem` fst platform && ((snd platform) == SpikePlatform)
+
+onLeft :: Game -> Game
+onLeft g = let player' = g^.player
+               platforms' = g^.platforms
+               in 
+                if getAny $ foldMap (Any . flip isOnLeft platforms') player'
+                  then g & player %~ fmap (+ V2 (-1) 0)
+                  else g
+
+isOnLeft :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
+isOnLeft player platforms = getAny $ foldMap (Any . isOnLeft' player) platforms
+
+isOnLeft' :: Coord -> (Platform, PlatformType) -> Bool
+isOnLeft' player platform = player `elem` fst platform && ((snd platform) == LeftPlatform)
+
+onRight :: Game -> Game
+onRight g = let player' = g^.player
+                platforms' = g^.platforms
+                in 
+                  if getAny $ foldMap (Any . flip isOnRight platforms') player'
+                    then g & player %~ fmap (+ V2 1 0)
+                    else g
+
+isOnRight :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
+isOnRight player platforms = getAny $ foldMap (Any . isOnRight' player) platforms
+
+isOnRight' :: Coord -> (Platform, PlatformType) -> Bool
+isOnRight' player platform = player `elem` fst platform && ((snd platform) == RightPlatform)
+
+
 
 -- increase depth
 incDepth :: Game -> Game
