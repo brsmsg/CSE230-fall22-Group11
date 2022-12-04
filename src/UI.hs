@@ -53,11 +53,11 @@ app = App { appDraw = drawUI
           }
 
 drawUI :: Game -> [Widget Name]
-drawUI g = [C.center (padRight (Pad 2) (drawGrid g <+> drawStats g))]
+drawUI g = [C.center (padRight (Pad 2) (drawStats g <+>  drawGrid g))]
 
 drawStats :: Game -> Widget Name
 -- drawStats g = hLimit 30 (vBox [drawGameOver (g^.alive), padTop (Pad 2) (drawScore (g^.score)), padTop (Pad 2) (drawBestScore (g^.bestScore))])
-drawStats g = hLimit 30 (vBox [drawGameOver (g^.alive), padTop (Pad 2) (drawScore (g^.score)), padTop (Pad 2) (drawBestScore (g^.bestScore)), padTop (Pad 2) (drawHealth (g^.health))])
+drawStats g = hLimit 30 (vBox [padTop (Pad 2) (drawScore (g^.score)), padTop (Pad 2) (drawBestScore (g^.bestScore)), padTop (Pad 2) (drawHealth (g^.health)), drawGameOver (g^.alive)])
 
 drawScore :: Score -> Widget Name
 drawScore s = withBorderStyle BS.unicodeRounded
