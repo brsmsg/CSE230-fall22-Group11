@@ -182,7 +182,7 @@ step' = incTime . createPlatforms . updateBestScore . move . deletePlatformsLeft
 
 move :: Game -> Game
 -- Todo
-move = movePlatforms . movePlayer . onSpike . onLeft. onRight
+move = movePlatforms . movePlayer . onSpike . onLeft . onRight . onHeal
 -- move = movePlatforms
 
 incTime :: Game -> Game
@@ -280,6 +280,20 @@ isOnRight player platforms = getAny $ foldMap (Any . isOnRight' player) platform
 isOnRight' :: Coord -> (Platform, PlatformType) -> Bool
 isOnRight' player platform = (player `elem` fst platform || (player + (V2 0 (-1))) `elem` fst platform) && ((snd platform) == RightPlatform)
 
+onHeal :: Game -> Game
+onHeal g = let player' = g^.player
+               platforms' = g^.platforms
+               health' = g^.health
+               in 
+                if (getAny $ foldMap (Any . flip isOnHeal platforms') player') && health' < 10
+                  then g & health %~ (+1)
+                  else g
+
+isOnHeal :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
+isOnHeal player platforms = getAny $ foldMap (Any . isOnHeal' player) platforms
+
+isOnHeal' :: Coord -> (Platform, PlatformType) -> Bool
+isOnHeal' player platform = (player `elem` fst platform || (player + (V2 0 (-1))) `elem` fst platform) && ((snd platform) == HealPlatform)
 
 
 -- increase depth
