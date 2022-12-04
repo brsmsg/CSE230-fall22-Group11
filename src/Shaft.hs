@@ -109,8 +109,8 @@ modeMaps = do
   y    <- randomRs (0, last initPlayer^._2) <$> newStdGen
   easyNormal <- randomRs (0, 5) <$> newStdGen
   easySpike <- randomRs (5, 10) <$> newStdGen
-  easyLeft <- randomRs (5, 10) <$> newStdGen
-  easyRight <- randomRs (5, 10) <$> newStdGen
+  easyLeft <- randomRs (8, 12) <$> newStdGen
+  easyRight <- randomRs (8, 12) <$> newStdGen
   medium <- randomRs (3, 5) <$> newStdGen
   hard <- randomRs (0, 3) <$> newStdGen
   return $ ModeMap
@@ -226,7 +226,7 @@ isOnplatform :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
 isOnplatform player platforms = getAny $ foldMap (Any . isOnplatform' player) platforms
 
 isOnplatform' :: Coord -> (Platform, PlatformType) -> Bool
-isOnplatform' player platform = player `elem` fst platform
+isOnplatform' player platform = player `elem` fst platform || (player + (V2 0 (-1))) `elem` fst platform
 
 onSpike :: Game -> Game
 onSpike g = let player' = g^.player
@@ -240,7 +240,7 @@ isOnSpike :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
 isOnSpike player platforms = getAny $ foldMap (Any . isOnSpike' player) platforms
 
 isOnSpike' :: Coord -> (Platform, PlatformType) -> Bool
-isOnSpike' player platform = player `elem` fst platform && ((snd platform) == SpikePlatform)
+isOnSpike' player platform = (player `elem` fst platform || (player + (V2 0 (-1))) `elem` fst platform )&& ((snd platform) == SpikePlatform)
 
 onLeft :: Game -> Game
 onLeft g = let player' = g^.player
@@ -254,7 +254,7 @@ isOnLeft :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
 isOnLeft player platforms = getAny $ foldMap (Any . isOnLeft' player) platforms
 
 isOnLeft' :: Coord -> (Platform, PlatformType) -> Bool
-isOnLeft' player platform = player `elem` fst platform && ((snd platform) == LeftPlatform)
+isOnLeft' player platform = (player `elem` fst platform || (player + (V2 0 (-1))) `elem` fst platform) && ((snd platform) == LeftPlatform)
 
 onRight :: Game -> Game
 onRight g = let player' = g^.player
@@ -268,7 +268,7 @@ isOnRight :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
 isOnRight player platforms = getAny $ foldMap (Any . isOnRight' player) platforms
 
 isOnRight' :: Coord -> (Platform, PlatformType) -> Bool
-isOnRight' player platform = player `elem` fst platform && ((snd platform) == RightPlatform)
+isOnRight' player platform = (player `elem` fst platform || (player + (V2 0 (-1))) `elem` fst platform) && ((snd platform) == RightPlatform)
 
 
 

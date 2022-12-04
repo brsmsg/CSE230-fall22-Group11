@@ -146,7 +146,7 @@ space :: Widget Name
 space = str " "
 
 underscore :: Widget Name
-underscore = str "_"
+underscore = str "*"
 
 upArrow :: Widget Name
 upArrow = str "^"
