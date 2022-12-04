@@ -24,7 +24,7 @@ type Platform = [Coord]
 type Depth = Int
 
 type Player = [Coord]
-data PlatformType = NormalPlatform | SpikePlatform deriving (Eq, Show)
+data PlatformType = NormalPlatform | SpikePlatform | LeftPlatform | RightPlatform deriving (Eq, Show)
 data Tick = Tick
 data Movement = Left | Right
 
@@ -39,20 +39,20 @@ data ModeMap = ModeMap
 type Frequency = [Int]
 data Modes = Modes
   {
-    _x                   :: [Int],
-    _y                   :: [Int],
-    _normalFrequency  :: Frequency,
-    _spikeFrequency       :: Frequency
-    -- _leftSharkFrequency  :: Frequency,
-    -- _rightSharkFrequency :: Frequency
+    _x                    :: [Int],
+    _y                    :: [Int],
+    _normalFrequency      :: Frequency,
+    _spikeFrequency       :: Frequency,
+    _leftFrequency           :: Frequency,
+    _rightFrequency          :: Frequency
   }
   deriving (Eq, Show)
 data LastDepth = LastDepth
   {
-    _normal  :: Depth,
-    _spike       :: Depth
-    -- _leftShark  :: Depth,
-    -- _rightShark :: Depth
+    _normal      :: Depth,
+    _spike       :: Depth,
+    _left        :: Depth,
+    _right        :: Depth
   }
   deriving (Eq, Show)
 
@@ -84,7 +84,7 @@ initPlayer :: Player
 initPlayer= [V2 (gridWidth `div` 2) (gridHeight - 3)]
 
 initlastDepth :: LastDepth
-initlastDepth = LastDepth (-5) (-5)
+initlastDepth = LastDepth (-5) (-5) (-5) (-5)
 
 initState :: Score -> IO Game
 initState bestScore = do
@@ -109,13 +109,14 @@ modeMaps = do
   y    <- randomRs (0, last initPlayer^._2) <$> newStdGen
   easyNormal <- randomRs (0, 5) <$> newStdGen
   easySpike <- randomRs (5, 10) <$> newStdGen
-  -- easyJellyFish <- randomRs (5, 10) <$> newStdGen
+  easyLeft <- randomRs (5, 10) <$> newStdGen
+  easyRight <- randomRs (5, 10) <$> newStdGen
   medium <- randomRs (3, 5) <$> newStdGen
   hard <- randomRs (0, 3) <$> newStdGen
   return $ ModeMap
-    (Modes x y easyNormal easySpike)
-    (Modes x y medium medium)
-    (Modes x y hard hard)
+    (Modes x y easyNormal easySpike easyLeft easyRight)
+    (Modes x y medium medium medium medium)
+    (Modes x y hard hard hard hard)
 
 -- | Get game's relevant mode.
 getModes :: Game -> Modes
@@ -143,6 +144,20 @@ inSpikePlatform c bs = getAny $ foldMap (Any . inSpikePlatform' c) bs
 inSpikePlatform' :: Coord -> (Platform, PlatformType) -> Bool
 inSpikePlatform' c (b, SpikePlatform) = c `elem` b
 inSpikePlatform' _ _ = False
+
+inLeftPlatform :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
+inLeftPlatform c bs = getAny $ foldMap (Any . inLeftPlatform' c) bs
+
+inLeftPlatform' :: Coord -> (Platform, PlatformType) -> Bool
+inLeftPlatform' c (b, LeftPlatform) = c `elem` b
+inLeftPlatform' _ _ = False
+
+inRightPlatform :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
+inRightPlatform c bs = getAny $ foldMap (Any . inRightPlatform' c) bs
+
+inRightPlatform' :: Coord -> (Platform, PlatformType) -> Bool
+inRightPlatform' c (b, RightPlatform) = c `elem` b
+inRightPlatform' _ _ = False
 
 step  :: Game -> Game
 step g = fromMaybe g $ do
@@ -194,8 +209,8 @@ movePlatforms :: Game -> Game
 movePlatforms g = g & platforms %~ fmap movePlatform
 
 movePlatform  :: (Platform, PlatformType) -> (Platform, PlatformType)
-movePlatform  (plt, NormalPlatform) = (fmap (+ V2 0 1) plt, NormalPlatform)
-movePlatform  (plt, SpikePlatform) = (fmap (+ V2 0 1) plt, SpikePlatform)
+movePlatform  (plt, x) = (fmap (+ V2 0 1) plt, x)
+-- movePlatform  (plt, SpikePlatform) = (fmap (+ V2 0 1) plt, SpikePlatform)
 -- movePlatform  other = other
 
 movePlayer :: Game -> Game
@@ -245,26 +260,39 @@ isDead g = let player' = g^.player
 
 
 addRandomPlatform :: PlatformType -> Game -> Game
-addRandomPlatform NormalPlatform g = let (Modes (x:xs) (y:ys) (j:js) ms) = getModes g
-                                         newModes = Modes xs ys js ms
+addRandomPlatform NormalPlatform g = let (Modes (x:xs) (y:ys) (j:js) ms ls rs) = getModes g
+                                         newModes = Modes xs ys js ms ls rs
                                          newObs = createPlatform NormalPlatform x
                                     in
                                       if g^.time - g^.lastPlatformDepth.normal >= j
                                       then setModes newModes g & platforms %~ (|> newObs) & ((lastPlatformDepth.normal) .~ g^.time)
                                       else g
-addRandomPlatform SpikePlatform g = let (Modes (x:xs) (y:ys) js (m:ms)) = getModes g
-                                        newModes = Modes xs ys js ms
+addRandomPlatform SpikePlatform g = let (Modes (x:xs) (y:ys) js (m:ms) ls rs) = getModes g
+                                        newModes = Modes xs ys js ms ls rs
                                         newObs = createPlatform SpikePlatform x
                                     in
                                       if g^.time - g^.lastPlatformDepth.spike >= m
                                       then setModes newModes g & platforms %~ (|> newObs) & ((lastPlatformDepth.spike) .~ g^.time)
-                                      else g                                                               
+                                      else g        
+addRandomPlatform LeftPlatform g = let (Modes (x:xs) (y:ys) js ms (l:ls) rs) = getModes g
+                                       newModes = Modes xs ys js ms ls rs
+                                       newObs = createPlatform LeftPlatform x
+                                    in
+                                      if g^.time - g^.lastPlatformDepth.left >= l
+                                      then setModes newModes g & platforms %~ (|> newObs) & ((lastPlatformDepth.left) .~ g^.time)
+                                      else g      
+addRandomPlatform RightPlatform g = let (Modes (x:xs) (y:ys) js ms ls (r:rs)) = getModes g
+                                        newModes = Modes xs ys js ms ls rs
+                                        newObs = createPlatform RightPlatform x
+                                    in
+                                      if g^.time - g^.lastPlatformDepth.right >= r
+                                      then setModes newModes g & platforms %~ (|> newObs) & ((lastPlatformDepth.right) .~ g^.time)
+                                      else g                                        
 addRandomPlatform _ g = g
 
 
 createPlatforms :: Game -> Game
--- createPlatforms g = g & platforms %~ (|> (createPlatform NormalPlatform 5))
-createPlatforms g = addRandomPlatform NormalPlatform $ addRandomPlatform SpikePlatform g
+createPlatforms g = addRandomPlatform NormalPlatform $ addRandomPlatform SpikePlatform $ addRandomPlatform LeftPlatform $ addRandomPlatform RightPlatform g
 
 createPlatform :: PlatformType -> Int -> (Platform, PlatformType)
 createPlatform pltType pos = (getPlatformCoord pltType pos, pltType)
@@ -274,8 +302,10 @@ createPlatform pltType pos = (getPlatformCoord pltType pos, pltType)
 -- getPlatform NormalPlatform  y = [V2 0 y, V2 1 y, V2 2 y, V2 3 y, V2 4 y, V2 5 y]
 
 getPlatformCoord :: PlatformType -> Int -> Platform
-getPlatformCoord NormalPlatform x = [V2 x 0, V2 (x+1) 0, V2 (x+2) 0, V2 (x+3) 0, V2 (x+4) 0]
-getPlatformCoord SpikePlatform x = [V2 x 0, V2 (x+1) 0, V2 (x+2) 0, V2 (x+3) 0, V2 (x+4) 0]
+getPlatformCoord _ x = [V2 x 0, V2 (x+1) 0, V2 (x+2) 0, V2 (x+3) 0, V2 (x+4) 0]
+-- getPlatformCoord NormalPlatform x = [V2 x 0, V2 (x+1) 0, V2 (x+2) 0, V2 (x+3) 0, V2 (x+4) 0]
+-- getPlatformCoord SpikePlatform x = [V2 x 0, V2 (x+1) 0, V2 (x+2) 0, V2 (x+3) 0, V2 (x+4) 0]
+
 
 deletePlatformsLeft :: Game -> Game
 deletePlatformsLeft g = case viewl $ g^.platforms of
@@ -293,5 +323,5 @@ deletePlatformsRight g = case viewr $ g^.platforms of
 
 -- | check the obastacle is out of boundray
 isOutOfBoundary :: (Platform, PlatformType) -> Bool
-isOutOfBoundary (coords, NormalPlatform) = (coords !! 2)^._2 > gridHeight
-isOutOfBoundary (coords, SpikePlatform)  = last coords^._2 > gridHeight
+-- isOutOfBoundary (coords, NormalPlatform) = (coords !! 2)^._2 > gridHeight
+isOutOfBoundary (coords, _)  = last coords^._2 > gridHeight

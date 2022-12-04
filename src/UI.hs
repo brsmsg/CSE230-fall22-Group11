@@ -15,7 +15,9 @@ import Shaft
     gridWidth,
     initState,
     inNormalPlatform,
-    inSpikePlatform
+    inSpikePlatform,
+    inLeftPlatform,
+    inRightPlatform
   )
 
 import qualified Brick.Widgets.Border as B
@@ -38,7 +40,7 @@ import Brick
     continue, halt, emptyWidget, padRight, padLeft, padTop, padAll, padBottom, hBox, attrName, (<+>)
   )
 
-data Cell = Empty | Player | NormalPlatform | SpikePlatform
+data Cell = Empty | Player | NormalPlatform | SpikePlatform | LeftPlatform | RightPlatform
 
 -- App definition
 app :: App Game Tick Name
@@ -106,6 +108,8 @@ drawGrid g = withBorderStyle BS.unicodeRounded
       | c `elem`(g^.player)                 = Player
       | inNormalPlatform c (g ^. platforms) = NormalPlatform
       | inSpikePlatform c (g ^. platforms)  = SpikePlatform
+      | inLeftPlatform c (g ^. platforms)   = LeftPlatform
+      | inRightPlatform c (g ^. platforms)  = RightPlatform
       | otherwise                           = Empty
 
 
@@ -114,6 +118,8 @@ drawCell Player = withAttr playerAttr space
 drawCell Empty  = withAttr emptyAttr space
 drawCell NormalPlatform = withAttr normalPlatformAttr underscore
 drawCell SpikePlatform  = withAttr spikePlatformAttr upArrow
+drawCell LeftPlatform = withAttr leftPlatformAttr leftArrow
+drawCell RightPlatform = withAttr rightPlatformAttr rightArrow
 
 playerAttr :: AttrName
 playerAttr = attrName "playerAttr"
@@ -123,6 +129,12 @@ normalPlatformAttr = attrName "normalPlatformAttr"
 
 spikePlatformAttr :: AttrName
 spikePlatformAttr = attrName "spikePlatformAttr"
+
+leftPlatformAttr :: AttrName
+leftPlatformAttr = attrName "leftPlatformAttr"
+
+rightPlatformAttr :: AttrName
+rightPlatformAttr = attrName "rightPlatformAttr"
 
 emptyAttr :: AttrName
 emptyAttr = attrName "emptyAttr"
@@ -150,5 +162,7 @@ theMap = attrMap V.defAttr
   [ (playerAttr, V.white `on` V.white)
   , (normalPlatformAttr, fg V.white `V.withStyle` V.bold)
   , (spikePlatformAttr, fg V.yellow `V.withStyle` V.bold)
+  , (leftPlatformAttr, fg V.blue `V.withStyle` V.bold)
+  , (rightPlatformAttr, fg V.red `V.withStyle` V.bold)
   , (gameOverAttr, fg V.red `V.withStyle` V.bold)
   ]
