@@ -7,6 +7,7 @@ import Shaft
     Name,
     score,
     bestScore,
+    health,
     platforms,
     player,
     gridHeight,
@@ -52,7 +53,7 @@ drawUI g = [C.center (padRight (Pad 2) (drawGrid g <+> drawStats g))]
 
 drawStats :: Game -> Widget Name
 -- drawStats g = hLimit 30 (vBox [drawGameOver (g^.alive), padTop (Pad 2) (drawScore (g^.score)), padTop (Pad 2) (drawBestScore (g^.bestScore))])
-drawStats g = hLimit 30 (vBox [padTop (Pad 2) (drawScore (g^.score)), padTop (Pad 2) (drawBestScore (g^.bestScore))])
+drawStats g = hLimit 30 (vBox [padTop (Pad 2) (drawScore (g^.score)), padTop (Pad 2) (drawBestScore (g^.bestScore)), padTop (Pad 2) (drawHealth (g^.health))])
 
 drawScore :: Score -> Widget Name
 drawScore s = withBorderStyle BS.unicodeRounded
@@ -64,6 +65,13 @@ drawScore s = withBorderStyle BS.unicodeRounded
 drawBestScore :: Score -> Widget Name
 drawBestScore s = withBorderStyle BS.unicodeRounded
   $ B.borderWithLabel (str " Best Score ")
+  $ C.hCenter
+  $ padAll 1
+  $ str (show s)
+
+drawHealth :: Score -> Widget Name
+drawHealth s = withBorderStyle BS.unicodeRounded
+  $ B.borderWithLabel (str " Health ")
   $ C.hCenter
   $ padAll 1
   $ str (show s)

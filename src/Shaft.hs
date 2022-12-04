@@ -80,7 +80,8 @@ gridHeight :: Int
 gridHeight = 20
 
 initPlayer :: Player
-initPlayer= [V2 (gridWidth `div` 2) (gridHeight - 3), V2 (gridWidth `div` 2) (gridHeight - 4)]
+-- initPlayer= [V2 (gridWidth `div` 2) (gridHeight - 3), V2 (gridWidth `div` 2) (gridHeight - 4)]
+initPlayer= [V2 (gridWidth `div` 2) (gridHeight - 3)]
 
 initlastDepth :: LastDepth
 initlastDepth = LastDepth (-5) (-5)
@@ -156,7 +157,7 @@ step' = incTime . createPlatforms . move . deletePlatformsLeft . deletePlatforms
 
 move :: Game -> Game
 -- Todo
-move = movePlatforms . movePlayer
+move = movePlatforms . movePlayer . onSpike
 -- move = movePlatforms
 
 incTime :: Game -> Game
@@ -201,16 +202,30 @@ movePlayer :: Game -> Game
 movePlayer g = let player' = g^.player
                    platforms' = g^.platforms
   in 
-    if getAny $ foldMap (Any . flip crash platforms') player' 
+    if getAny $ foldMap (Any . flip isOnplatform platforms') player'
       then g & player %~ fmap (+ V2 0 (1))
       else incDepth (g & player %~ fmap (+ V2 0 (-1)))
 
 
-crash :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
-crash player platforms = getAny $ foldMap (Any . crash' player) platforms
+isOnplatform :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
+isOnplatform player platforms = getAny $ foldMap (Any . isOnplatform' player) platforms
 
-crash' :: Coord -> (Platform, PlatformType) -> Bool
-crash' player platform = player `elem` fst platform
+isOnplatform' :: Coord -> (Platform, PlatformType) -> Bool
+isOnplatform' player platform = player `elem` fst platform
+
+onSpike :: Game -> Game
+onSpike g = let player' = g^.player
+                platforms' = g^.platforms
+                in 
+                  if getAny $ foldMap (Any . flip isOnSpike platforms') player'
+                    then g & health %~ (+(-1))
+                    else g
+
+isOnSpike :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
+isOnSpike player platforms = getAny $ foldMap (Any . isOnSpike' player) platforms
+
+isOnSpike' :: Coord -> (Platform, PlatformType) -> Bool
+isOnSpike' player platform = player `elem` fst platform && ((snd platform) == SpikePlatform)
 
 -- increase depth
 incDepth :: Game -> Game
@@ -225,7 +240,8 @@ checkAlive g = do
 isDead :: Game -> Bool
 isDead g = let player' = g^.player
                platforms' = g^.platforms
-              in ((last player')^._2) < 0
+               health' = g^.health
+              in ((last player')^._2) < 0 || health' <= 0
 
 
 addRandomPlatform :: PlatformType -> Game -> Game
@@ -236,6 +252,13 @@ addRandomPlatform NormalPlatform g = let (Modes (x:xs) (y:ys) (j:js) ms) = getMo
                                       if g^.time - g^.lastPlatformDepth.normal >= j
                                       then setModes newModes g & platforms %~ (|> newObs) & ((lastPlatformDepth.normal) .~ g^.time)
                                       else g
+addRandomPlatform SpikePlatform g = let (Modes (x:xs) (y:ys) js (m:ms)) = getModes g
+                                        newModes = Modes xs ys js ms
+                                        newObs = createPlatform SpikePlatform x
+                                    in
+                                      if g^.time - g^.lastPlatformDepth.spike >= m
+                                      then setModes newModes g & platforms %~ (|> newObs) & ((lastPlatformDepth.spike) .~ g^.time)
+                                      else g                                                               
 addRandomPlatform _ g = g
 
 
