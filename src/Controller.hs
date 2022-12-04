@@ -16,7 +16,7 @@ handleEvent g (VtyEvent (V.EvKey V.KRight []))       = continue $ movePlayerSing
 -- handleEvent g (VtyEvent (V.EvKey V.KDown []))        = continue $ handleDirection Down g
 handleEvent g (VtyEvent (V.EvKey (V.KChar 'q') []))  = halt g
 handleEvent g (VtyEvent (V.EvKey V.KEsc []))         = halt g
--- handleEvent g (VtyEvent (V.EvKey (V.KChar 'r') []))  = liftIO (initState (g^.maxDepth)) >>= continue
+handleEvent g (VtyEvent (V.EvKey (V.KChar 'r') []))  = liftIO (initState (g^.bestScore)) >>= continue
 handleEvent g _ = continue g
 
 -- oppositeDirection :: Direction -> Direction

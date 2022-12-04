@@ -166,7 +166,7 @@ step g = fromMaybe g $ do
   -- return $ fromMaybe (step' g) (Just g)
 
 step' :: Game -> Game
-step' = incTime . createPlatforms . move . deletePlatformsLeft . deletePlatformsRight
+step' = incTime . createPlatforms . updateBestScore . move . deletePlatformsLeft . deletePlatformsRight
 -- Todo
 -- step' = move
 
@@ -275,6 +275,14 @@ isOnRight' player platform = (player `elem` fst platform || (player + (V2 0 (-1)
 -- increase depth
 incDepth :: Game -> Game
 incDepth g = g & score %~ (+1)
+
+updateBestScore :: Game -> Game
+updateBestScore g = let s = g^.score
+                        bscore = g^.bestScore
+              in
+                if s > bscore 
+                  then g & bestScore .~ s
+                  else g
 
 checkAlive :: Game -> Maybe Game
 checkAlive g = do
