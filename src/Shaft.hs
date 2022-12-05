@@ -79,7 +79,7 @@ makeLenses ''LastDepth
 gridWidth :: Int
 gridWidth = 50
 gridHeight :: Int
-gridHeight = 20
+gridHeight = 30
 
 initPlayer :: Player
 -- initPlayer= [V2 (gridWidth `div` 2) (gridHeight - 3), V2 (gridWidth `div` 2) (gridHeight - 4)]
@@ -109,17 +109,27 @@ modeMaps :: IO ModeMap
 modeMaps = do
   x    <- randomRs (0, gridWidth) <$> newStdGen
   y    <- randomRs (0, last initPlayer^._2) <$> newStdGen
-  easyNormal <- randomRs (0, 5) <$> newStdGen
-  easySpike <- randomRs (5, 10) <$> newStdGen
+  easyNormal <- randomRs (0, 3) <$> newStdGen
+  easySpike <- randomRs (8, 12) <$> newStdGen
   easyLeft <- randomRs (8, 12) <$> newStdGen
   easyRight <- randomRs (8, 12) <$> newStdGen
   easyHeal <- randomRs (10, 15) <$> newStdGen
-  medium <- randomRs (3, 5) <$> newStdGen
-  hard <- randomRs (0, 3) <$> newStdGen
+  
+  mediumNormal <- randomRs (2, 5) <$> newStdGen
+  mediumSpike <- randomRs (10, 14) <$> newStdGen
+  mediumLeft <- randomRs (10, 14) <$> newStdGen
+  mediumRight <- randomRs (10, 14) <$> newStdGen
+  mediumHeal <- randomRs (12, 18) <$> newStdGen
+  
+  hardNormal <- randomRs (8, 12) <$> newStdGen
+  hardSpike <- randomRs (12, 15) <$> newStdGen
+  hardLeft <- randomRs (12, 15) <$> newStdGen
+  hardRight <- randomRs (12, 15) <$> newStdGen
+  hardHeal <- randomRs (15, 20) <$> newStdGen
   return $ ModeMap
     (Modes x y easyNormal easySpike easyLeft easyRight easyHeal)
-    (Modes x y medium medium medium medium medium)
-    (Modes x y hard hard hard hard hard)
+    (Modes x y mediumNormal mediumSpike mediumLeft mediumRight mediumHeal)
+    (Modes x y hardNormal hardSpike hardLeft hardRight hardHeal)
 
 -- | Get game's relevant mode.
 getModes :: Game -> Modes
@@ -133,6 +143,24 @@ setModes m g = case g^.mode of
                   Easy -> g & modeMap.easy .~ m
                   Medium -> g & modeMap.medium .~ m
                   Hard -> g & modeMap.hard .~ m
+
+-- change mode when we dive to the depth
+modesOfTime :: [Int]
+modesOfTime = [50, 20, 0]
+
+-- modes we have now
+modesType :: [Mode]
+modesType = [Hard, Medium, Easy]
+
+-- find which mode we shold use at current depth
+findMode :: Depth -> Maybe Int
+findMode d = findIndex (d >=) modesOfTime
+
+-- | change game's relevant mode.
+changeMode :: Game -> Game
+changeMode g = case findMode (g^.time) of
+                  Just x -> g & mode .~ (modesType !! x)
+                  Nothing -> g
 
 inNormalPlatform :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
 inNormalPlatform c bs = getAny $ foldMap (Any . inNormalPlatform' c) bs
@@ -176,7 +204,7 @@ step g = fromMaybe g $ do
   -- return $ fromMaybe (step' g) (Just g)
 
 step' :: Game -> Game
-step' = incTime . createPlatforms . updateBestScore . move . deletePlatformsLeft . deletePlatformsRight
+step' = changeMode . incTime . createPlatforms . updateBestScore . move . deletePlatformsLeft . deletePlatformsRight
 -- Todo
 -- step' = move
 
