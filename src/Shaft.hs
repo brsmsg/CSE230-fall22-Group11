@@ -82,7 +82,6 @@ gridHeight :: Int
 gridHeight = 30
 
 initPlayer :: Player
--- initPlayer= [V2 (gridWidth `div` 2) (gridHeight - 3), V2 (gridWidth `div` 2) (gridHeight - 4)]
 initPlayer= [V2 (gridWidth `div` 2) (gridHeight - 3)]
 
 initlastDepth :: LastDepth
@@ -95,7 +94,6 @@ initState bestScore = do
     _player     = initPlayer,
     _score      = 0,
     _platforms   = SEQ.empty,
-    -- _platforms   =  singleton ([V2 0 5, V2 1 5, V2 2 5, V2 3 5, V2 4 5, V2 5 5], NormalPlatform),
     _bestScore  = bestScore,
     _health     = 10,
     _alive      = True,
@@ -131,7 +129,6 @@ modeMaps = do
     (Modes x y mediumNormal mediumSpike mediumLeft mediumRight mediumHeal)
     (Modes x y hardNormal hardSpike hardLeft hardRight hardHeal)
 
--- | Get game's relevant mode.
 getModes :: Game -> Modes
 getModes g = case g^.mode of
                 Easy -> g^.modeMap.easy
@@ -144,19 +141,15 @@ setModes m g = case g^.mode of
                   Medium -> g & modeMap.medium .~ m
                   Hard -> g & modeMap.hard .~ m
 
--- change mode when we dive to the depth
 modesOfTime :: [Int]
 modesOfTime = [200, 50, 0]
 
--- modes we have now
 modesType :: [Mode]
 modesType = [Hard, Medium, Easy]
 
--- find which mode we shold use at current depth
 findMode :: Depth -> Maybe Int
 findMode d = findIndex (d >=) modesOfTime
 
--- | change game's relevant mode.
 changeMode :: Game -> Game
 changeMode g = case findMode (g^.time) of
                   Just x -> g & mode .~ (modesType !! x)
@@ -201,17 +194,12 @@ step  :: Game -> Game
 step g = fromMaybe g $ do
   guard $ g^.alive
   return $ fromMaybe (step' g) (checkAlive g)
-  -- return $ fromMaybe (step' g) (Just g)
 
 step' :: Game -> Game
 step' = changeMode . incTime . createPlatforms . updateBestScore . move . deletePlatformsLeft . deletePlatformsRight
--- Todo
--- step' = move
 
 move :: Game -> Game
--- Todo
 move = movePlatforms . movePlayer . onSpike . onLeft . onRight . onHeal
--- move = movePlatforms
 
 incTime :: Game -> Game
 incTime g = g & time %~ (+1)
@@ -248,8 +236,6 @@ movePlatforms g = g & platforms %~ fmap movePlatform
 
 movePlatform  :: (Platform, PlatformType) -> (Platform, PlatformType)
 movePlatform  (plt, x) = (fmap (+ V2 0 1) plt, x)
--- movePlatform  (plt, SpikePlatform) = (fmap (+ V2 0 1) plt, SpikePlatform)
--- movePlatform  other = other
 
 movePlayer :: Game -> Game
 movePlayer g = let player' = g^.player
@@ -323,8 +309,6 @@ isOnHeal player platforms = getAny $ foldMap (Any . isOnHeal' player) platforms
 isOnHeal' :: Coord -> (Platform, PlatformType) -> Bool
 isOnHeal' player platform = (player `elem` fst platform || (player + (V2 0 (-1))) `elem` fst platform) && ((snd platform) == HealPlatform)
 
-
--- increase depth
 incDepth :: Game -> Game
 incDepth g = g & score %~ (+1)
 
@@ -394,14 +378,9 @@ createPlatforms g = addRandomPlatform NormalPlatform $ addRandomPlatform SpikePl
 createPlatform :: PlatformType -> Int -> (Platform, PlatformType)
 createPlatform pltType pos = (getPlatformCoord pltType pos, pltType)
 
--- getPlatform :: PlatformType -> Int -> Platform
--- getPlatform NormalPlatform  x = [V2 0 y, V2 1 y, V2 2 y]
--- getPlatform NormalPlatform  y = [V2 0 y, V2 1 y, V2 2 y, V2 3 y, V2 4 y, V2 5 y]
-
 getPlatformCoord :: PlatformType -> Int -> Platform
 getPlatformCoord HealPlatform x = [V2 x 0, V2 (x+1) 0, V2 (x+2) 0]
 getPlatformCoord _ x = [V2 x 0, V2 (x+1) 0, V2 (x+2) 0, V2 (x+3) 0, V2 (x+4) 0]
--- getPlatformCoord SpikePlatform x = [V2 x 0, V2 (x+1) 0, V2 (x+2) 0, V2 (x+3) 0, V2 (x+4) 0]
 
 
 deletePlatformsLeft :: Game -> Game
@@ -418,7 +397,5 @@ deletePlatformsRight g = case viewr $ g^.platforms of
                                   then deletePlatformsRight (g & platforms .~ as)
                                   else g
 
--- | check the obastacle is out of boundray
 isOutOfBoundary :: (Platform, PlatformType) -> Bool
--- isOutOfBoundary (coords, NormalPlatform) = (coords !! 2)^._2 > gridHeight
 isOutOfBoundary (coords, _)  = last coords^._2 > gridHeight
