@@ -70,6 +70,7 @@ test-suite CSE230-fall22-Group11-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      UnitTest
       Paths_CSE230_fall22_Group11
   hs-source-dirs:
       test

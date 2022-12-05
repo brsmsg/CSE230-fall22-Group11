@@ -146,7 +146,7 @@ setModes m g = case g^.mode of
 
 -- change mode when we dive to the depth
 modesOfTime :: [Int]
-modesOfTime = [50, 20, 0]
+modesOfTime = [200, 50, 0]
 
 -- modes we have now
 modesType :: [Mode]
