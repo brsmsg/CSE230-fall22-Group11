@@ -13,12 +13,14 @@ The goal of the game is to survive as long as possible. Players must make sure t
 
 We have also introduced a score system. The player will earn points and a certain health bonus when stepping on a platform. You can also try to score as many points as possible.
 
+We also have a mode system. The mode will change as the time increases. We have three modes, easy, medium and hard, which are determined by the different frequencies when platforms are generated.
+
 ### Platform design
 There are several different platforms:
 * **Normal platform**
 * **Spike platform** : The player will get hurt when steps on it.
 * **Conveyor belt platform** : The player is forced to move to the right or to the left.
-* **Heal platform** : The player will be healed when steps on it
+* **Heal platform** : The player will be healed when steps on it and gain some extra scores
 
 ## Updates
 
