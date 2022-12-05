@@ -299,9 +299,13 @@ onHeal g = let player' = g^.player
                platforms' = g^.platforms
                health' = g^.health
                in 
-                if (getAny $ foldMap (Any . flip isOnHeal platforms') player') && health' < 10
-                  then g & health %~ (+1)
-                  else g
+                if (getAny $ foldMap (Any . flip isOnHeal platforms') player') 
+                  then
+                    if health' < 10
+                      then
+                        (g & health %~ (+1)) & score %~ (+1)
+                      else g & score %~ (+1)
+                  else g 
 
 isOnHeal :: Coord -> SEQ.Seq (Platform, PlatformType) -> Bool
 isOnHeal player platforms = getAny $ foldMap (Any . isOnHeal' player) platforms
